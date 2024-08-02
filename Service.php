@@ -12,8 +12,10 @@ class Service extends __Fragment
 	protected Module $module;
 	function onCreate(Module $module)
 	{
-		// error_log("Editor::onCreate");
 		$this->module = $module;
+	}
+
+	function onInit() {
 		View::getInstance()->getTwig()->addExtension(new EditorExtension());
 	}
 

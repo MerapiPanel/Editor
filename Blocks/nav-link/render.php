@@ -1,3 +1,3 @@
-<a <?= !empty($className) ? ' class="' . $className . '"' : '' ?> <?= implode(" ", array_map(fn($k, $v) => "$k=\"$v\"", array_keys($attributes), array_values($attributes))) ?>>
+<a <?= implode(array_map(function($attr) use ($attributes) { return $attr . "=\"" . $attributes[$attr] . "\""; }, array_keys($attributes)))?>>
 <?= renderComponents($components) ?>
 </a>

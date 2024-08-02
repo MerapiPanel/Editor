@@ -1,4 +1,3 @@
-<nav
-   <?= !empty($className) ? "class='" . $className . "'" : "" ?> role="navigation"><?= renderComponents($components) ?>
+<nav <?= implode(array_map(function($attr) use ($attributes) { return $attr . "=\"" . $attributes[$attr] . "\""; }, array_keys($attributes)))?>><?= renderComponents($components) ?>
 </nav>
 

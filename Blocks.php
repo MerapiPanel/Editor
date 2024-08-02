@@ -121,7 +121,7 @@ namespace MerapiPanel\Module\Editor {
                     $rendered[] = $component["content"];
                     continue;
                 }
-                
+
                 if ($type === "text") {
                     $rendered[] = $this->defaultRender(...[
                         "tagName"    => "span",
@@ -201,10 +201,8 @@ namespace {
         if (!isset($classes)) {
             $classes = [];
         }
-        $className = null;
-        if (count($classes)) {
-            $className = implode(" ", $classes);
-        }
+
+        $attributes['class'] = implode(" ", $classes);
 
         if (!isset($components)) {
             $components = [];
