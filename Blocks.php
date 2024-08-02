@@ -46,7 +46,6 @@ namespace MerapiPanel\Module\Editor {
 
         private function defaultRender($tagName = "div", $attributes = [], $content = "")
         {
-            error_log($content . " " . print_r($attributes, 1));
             $attribute = (!empty($attributes) ? " " : "") . implode(" ", array_map(fn ($k) => "$k=\"$attributes[$k]\"", array_keys($attributes)));
             return "<$tagName{$attribute}>{$content}</$tagName>";
         }
