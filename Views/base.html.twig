@@ -77,7 +77,4 @@
 {{ parent() }}
 <script src="{{ '@FileManager/dist/FileManager.js' | assets }}"></script>
 <script src="{{ '@editor/dist/main.js' | assets }}?v={{ time() }}"></script>
-<script>
-	__.FileManager.config.enable_select_folder = false;
-</script>
 {% endblock %}
