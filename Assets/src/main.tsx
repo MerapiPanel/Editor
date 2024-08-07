@@ -28,6 +28,7 @@ if (!payload.config.container) {
     payload.config.container = '#editor';
 }
 
+
 ReactDOM
     .createRoot(document.querySelector(payload.config.container) as HTMLElement)
     .render(

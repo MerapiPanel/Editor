@@ -44,38 +44,88 @@ namespace MerapiPanel\Module\Editor {
             return $blocks;
         }
 
-        private function defaultRender($tagName = "div", $attributes = [], $content = "")
+        private function renderTag($tagName = "div", $component = [])
         {
-            $attribute = (!empty($attributes) ? " " : "") . implode(" ", array_map(fn ($k) => "$k=\"$attributes[$k]\"", array_keys($attributes)));
-            return "<$tagName{$attribute}>{$content}</$tagName>";
+
+            $attributes = [
+                "class" => [],
+                ...($component['attributes'] ?? [])
+            ];
+            if (isset($component['classes'])) {
+                $attributes["class"] = $component['classes'];
+            }
+            if (isset($component["attributes"]["style"])) {
+                $selector = "";
+                if (!isset($component["attributes"]["id"])) {
+                    $component["attributes"]["id"] = Util::uniq(46);
+                }
+                $selector .= "#" . $component["attributes"]["id"];
+                if (isset($component["attributes"]["classes"])) {
+                    $selector .= "." . implode(".", $component["attributes"]["classes"]);
+                }
+
+                $this->styles .= "$selector{" . $component['attributes']['style'] . "}";
+                unset($component["attributes"]["style"]);
+            }
+
+            $attributes['class'] = implode(" ", array_filter($attributes['class'], fn ($v) => is_string($v)));
+            $attribute = implode(" ", array_filter(array_map(function ($k) use ($attributes) {
+                $val = $attributes[$k];
+                if (empty($val)) return;
+                return "$k=\"$val\"";
+            }, array_keys($attributes))));
+
+            $content = isset($component["components"])  ? $this->render($component['components'] ?? []) : ($component['content'] ?? "");
+            return "<$tagName {$attribute}>{$content}</$tagName>";
         }
+
 
         private function renderResolve($component = [])
         {
 
-            if (gettype($component) === "string")
+            if (gettype($component) === "string") {
                 return $component;
-
+            }
 
             if (isset($component['tagName'])) {
-                $className = isset($component['classes']) ? implode(" ", $component['classes']) : null;
-                $attribute = isset($component['attributes']) ? implode(" ", array_map(function ($attr) use ($component) {
-                    if (isset($component['attributes'][$attr])) {
-                        return "{$attr}=\"{$component['attributes'][$attr]}\"";
+                $attributes = [
+                    "class" => [],
+                    ...($component['attributes'] ?? [])
+                ];
+                if (isset($component['classes'])) {
+                    $attributes["class"] = $component['classes'];
+                }
+                if (isset($component["attributes"]["style"])) {
+                    $selector = "";
+                    if (!isset($component["attributes"]["id"])) {
+                        $component["attributes"]["id"] = Util::uniq(46);
                     }
-                    return $attr;
-                }, array_keys($component['attributes']))) : null;
+                    $selector .= "#" . $component["attributes"]["id"];
+                    if (isset($component["attributes"]["classes"])) {
+                        $selector .= "." . implode(".", $component["attributes"]["classes"]);
+                    }
+
+                    $this->styles .= "$selector{" . $component['attributes']['style'] . "}";
+                    unset($component["attributes"]["style"]);
+                }
+
+                $attributes['class'] = implode(" ", array_filter($attributes['class'], fn ($v) => is_string($v)));
+                $attribute = implode(" ", array_filter(array_map(function ($k) use ($attributes) {
+                    $val = $attributes[$k];
+                    if (empty($val)) return;
+                    return "$k=\"$val\"";
+                }, array_keys($attributes))));
 
                 if (isset($component['content'])) {
-                    return "<{$component['tagName']}" . ($className ? " class='$className'" : '') . " {$attribute}>{$component['content']}</{$component['tagName']}>";
+                    return "<{$component['tagName']} {$attribute}>{$component['content']}</{$component['tagName']}>";
                 } else if (isset($component['components'])) {
-                    return "<{$component['tagName']} " . ($className ? " class='$className'" : '') . " {$attribute}>{$this->render($component['components'])}</{$component['tagName']}>";
+                    return "<{$component['tagName']} {$attribute}>{$this->render($component['components'])}</{$component['tagName']}>";
                 } else {
-                    return "<{$component['tagName']} " . ($className ? " class='$className'" : '') . " {$attribute}/>";
+                    return "<{$component['tagName']} {$attribute}/>";
                 }
-            } else if (isset($component['components'])) {
-                $component['type'] = "editor-group";
-                return $this->render([$component]);
+            } else {
+
+                return $this->renderTag("div", $component);
             }
         }
 
@@ -83,8 +133,9 @@ namespace MerapiPanel\Module\Editor {
         function render($components = [])
         {
 
-            if (gettype($components) === "string")
+            if (empty($components) || gettype($components) === "string") {
                 return $components;
+            }
 
             $resolve_namespace = [
                 "bs" => "Editor",
@@ -112,25 +163,24 @@ namespace MerapiPanel\Module\Editor {
                     unset($component["attributes"]["style"]);
                 }
 
+                $isAttributeEmpty = empty(array_filter(array_map(fn ($v) => !empty(trim($v)), array_values($attributes))));
+
                 if (!$type) {
                     $rendered[] = $this->renderResolve($component);
                     continue;
                 }
 
-                if ($type === "textnode") {
-                    $rendered[] = $component["content"];
-                    continue;
-                }
-
-                if ($type === "text") {
-                    $rendered[] = $this->defaultRender(...[
+                if (in_array($type, ["text", "textnode"])) {
+                    if ($isAttributeEmpty) {
+                        $rendered[] = $component['content'] ?? ($this->render($component['components'] ?? []));
+                        continue;
+                    }
+                    $rendered[] = $this->renderTag(...[
                         "tagName"    => "span",
-                        "attributes" => $attributes,
-                        "content"    =>  isset($component['content']) ? $component['content'] : ($this->render($component['components'] ?? []))
+                        "component" => $component
                     ]);
                     continue;
                 }
-
 
                 if (count(explode('-', $type)) > 1) {
 
@@ -147,12 +197,11 @@ namespace MerapiPanel\Module\Editor {
                     $blockName = $type;
                 }
 
-
                 $fragment = Path::join(Box::module($module)->path, "Blocks", $blockName, "render.php");
                 if (!file_exists($fragment)) {
-                    $rendered[] = $this->defaultRender(...[
-                        "attributes" => $attributes,
-                        "content" =>  isset($component['content']) ? $component['content'] : $this->render($component['components'] ?? [])
+                    $rendered[] = $this->renderTag(...[
+                        "tagName"    => "div",
+                        "component" => $component
                     ]);
                     continue;
                 }

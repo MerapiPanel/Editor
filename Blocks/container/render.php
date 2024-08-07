@@ -1,5 +1,6 @@
 <?php
-$class = " class=\"" . implode(" ", $classes ?? []) . "\"";
+if (empty($attributes['class'])) $attributes['class'] = "container";
+$attributes = implode(" ", array_map(fn ($k) => "$k=\"$attributes[$k]\"", array_keys($attributes)));
 ?>
 
-<div<?= $class ?>><?= renderComponents($components) ?></div>
+<div <?= $attributes ?>><?= renderComponents($components) ?></div>
