@@ -48,11 +48,10 @@ namespace MerapiPanel\Module\Editor {
         {
 
             $attributes = [
-                "class" => [],
                 ...($component['attributes'] ?? [])
             ];
-            if (isset($component['classes'])) {
-                $attributes["class"] = $component['classes'];
+            if (isset($component['classes']) && is_array($component['classes'])) {
+                $attributes["class"] = implode(" ", array_filter($component['classes'], fn ($v) => is_string($v)));
             }
             if (isset($component["attributes"]["style"])) {
                 $selector = "";
@@ -68,7 +67,6 @@ namespace MerapiPanel\Module\Editor {
                 unset($component["attributes"]["style"]);
             }
 
-            $attributes['class'] = implode(" ", array_filter($attributes['class'], fn ($v) => is_string($v)));
             $attribute = implode(" ", array_filter(array_map(function ($k) use ($attributes) {
                 $val = $attributes[$k];
                 if (empty($val)) return;
@@ -89,11 +87,10 @@ namespace MerapiPanel\Module\Editor {
 
             if (isset($component['tagName'])) {
                 $attributes = [
-                    "class" => [],
                     ...($component['attributes'] ?? [])
                 ];
-                if (isset($component['classes'])) {
-                    $attributes["class"] = $component['classes'];
+                if (isset($component['classes']) && is_array($component['classes'])) {
+                    $attributes["class"] = implode(" ", array_filter($component['classes'], fn ($v) => is_string($v)));
                 }
                 if (isset($component["attributes"]["style"])) {
                     $selector = "";
@@ -109,7 +106,6 @@ namespace MerapiPanel\Module\Editor {
                     unset($component["attributes"]["style"]);
                 }
 
-                $attributes['class'] = implode(" ", array_filter($attributes['class'], fn ($v) => is_string($v)));
                 $attribute = implode(" ", array_filter(array_map(function ($k) use ($attributes) {
                     $val = $attributes[$k];
                     if (empty($val)) return;
@@ -132,6 +128,7 @@ namespace MerapiPanel\Module\Editor {
 
         function render($components = [])
         {
+            if(!is_array($components)) return $components;
 
             if (empty($components) || gettype($components) === "string") {
                 return $components;
@@ -145,8 +142,8 @@ namespace MerapiPanel\Module\Editor {
             foreach ($components as $key => $component) {
 
                 $type = $component['type'] ?? null;
-                $attributes = $component['attributes'] ?? [];
-                if (isset($component['classes'])) {
+                $attributes = isset($component['attributes']) && is_array($component['attributes']) ? $component['attributes'] : (json_decode($component['attributes'] ?? '[]', true) ?? []);
+                if (isset($component['classes']) && is_array($component['classes'])) {
                     $attributes["class"] = implode(" ", array_filter($component['classes'], fn ($v) => is_string($v)));
                 }
                 if (isset($component["attributes"]["style"])) {
@@ -228,6 +225,7 @@ namespace {
 
     function renderComponents($components = [])
     {
+        if(!is_array($components)) return $components;
         return Box::module("Editor")->Blocks->render($components);
     }
 
@@ -245,13 +243,13 @@ namespace {
                     $item = implode(";", $item);
                 }
                 return $item;
-            }, $attributes);
+            }, is_array($attributes) ? $attributes : []);
         }
         if (!isset($classes)) {
             $classes = [];
         }
 
-        $attributes['class'] = implode(" ", $classes);
+        $attributes['class'] = implode(" ", is_array($classes) ? $classes : []);
 
         if (!isset($components)) {
             $components = [];
